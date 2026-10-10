@@ -1,0 +1,32 @@
+{
+  "name": "multi-coding-agents-mern",
+  "version": "1.0.0",
+  "description": "MERN Stack Application for Bound Multi Coding Agents with a Single Shared History",
+  "main": "server/server.js",
+  "scripts": {
+    "server": "node server/server.js",
+    "client": "npm --prefix client run dev",
+    "dev": "node server/server.js",
+    "build:client": "npm --prefix client run build",
+    "install:all": "npm install && npm --prefix server install && npm --prefix client install"
+  },
+  "keywords": [
+    "mern",
+    "multi-agent",
+    "coding-agents",
+    "shared-history",
+    "mongodb",
+    "express",
+    "react",
+    "nodejs"
+  ],
+  "author": "Antigravity",
+  "license": "MIT",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "mongoose": "^8.5.1",
+    "uuid": "^10.0.0"
+  }
+}
