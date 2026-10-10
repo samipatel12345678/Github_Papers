@@ -1,0 +1,29 @@
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "outDir": "./dist",
+    "rootDir": "./src",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true
+  },
+  "include": [
+    "src/server.ts",
+    "src/BaseAgent.ts",
+    "src/ResearcherAgent.ts",
+    "src/WriterAgent.ts",
+    "src/CriticAgent.ts",
+    "src/FeedbackAgent.ts",
+    "src/FeedbackLoopOrchestrator.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "src/App.tsx",
+    "src/main.tsx"
+  ]
+}
