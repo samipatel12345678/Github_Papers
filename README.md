@@ -1,162 +1,213 @@
-# 🌐 Universal AI Coding Agents Studio (MERN Stack)
-### *Uniting Antigravity, Claude, Cursor, Devin, ChatGPT & Gemini over a Single Shared History*
+# 🚀 Google Antigravity Multi-Agent Studio
 
-A production-ready **MERN (MongoDB, Express, React, Node.js)** application combining the world's most powerful AI coding agents:
-- 🚀 **Antigravity** (Google DeepMind) — High-order architectural reasoning, system artifacts, and modular invariant specification.
-- 🧠 **Claude** (Anthropic Claude 3.7 / 3.5 Sonnet) — Nuanced logic, rigorous security audits, and zero-waste refactors.
-- ⚡ **Cursor** (Anysphere Composer) — Multi-file surgical diff authoring and rapid code synthesis.
-- 🤖 **Devin** (Cognition AI) — Autonomous environment QA, test authoring, and sandbox test execution.
-- 🟢 **ChatGPT** (OpenAI GPT-4o) — Broad ecosystem strategies, performance trade-offs, and microservice topology.
-- ♊ **Gemini** (Google Gemini 2.0 Flash) — Deep contextual synthesis and full-repo understanding.
-- 🛠️ **Aider** (Paul Gauthier) — Git-centric pair programming and conventional documentation.
+> **Universal Collaborative AI Coding Studio uniting Antigravity, Claude, Cursor, Devin, ChatGPT & Gemini over a Single Shared History with real disk synchronization and autonomous execution.**
 
-All bound to a **Single Canonical History** in MongoDB & Local Disk!
+[![Node.js](https://img.shields.io/badge/Node.js-v18%2B-green.svg)](https://nodejs.org/)
+[![React](https://img.shields.io/badge/React-18-blue.svg)](https://react.dev/)
+[![Express](https://img.shields.io/badge/Express-4.x-black.svg)](https://expressjs.com/)
+[![MongoDB](https://img.shields.io/badge/MongoDB-Mongoose-emerald.svg)](https://www.mongodb.com/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 ---
 
-## 💡 The Core Breakthrough: Single Shared History
+## 🌟 Overview
 
-Instead of juggling separate tools where each assistant starts from zero context:
-1. **One Unified Event Stream**: Every prompt, agent deliberation (`<thought>`), multi-file code generation, security audit, test execution, and user feedback is committed to a single chronological timeline.
-2. **True Inter-Agent Awareness**: 
-   - **Antigravity** defines architectural invariants and file topology.
-   - **Claude** reviews Antigravity's thoughts and performs a security/boundary audit.
-   - **Cursor** synthesizes the production code into workspace files.
-   - **Devin** runs automated sandbox tests and verifies execution.
-   - **ChatGPT** & **Gemini** synthesize cross-system integration and documentation.
-3. **On-Demand Summoning or Full Roundtable Council**:
-   - Summon any specific agent with a single click on their roster badge.
-   - Or click **⚡ Roundtable (All Real Agents)** to run the full collaborative pipeline sequentially!
+**Google Antigravity Multi-Agent Studio** is an open-source development environment designed around a revolutionary paradigm: **a Single Canonical Shared History**.
 
-```mermaid
-flowchart TD
-    User([👤 User Prompt]) -->|Step 1| History[(🧠 Single Shared History in MongoDB & Disk)]
-    
-    subgraph Council ["🌐 Bound AI Coding Agents Council"]
-        Antigravity["🚀 Antigravity (DeepMind)\nArchitecture & Invariants"]
-        Claude["🧠 Claude 3.7 (Anthropic)\nSecurity & Boundary Audit"]
-        Cursor["⚡ Cursor (Composer)\nSurgical Code Synthesis"]
-        Devin["🤖 Devin (Cognition)\nAutonomous Sandbox & Tests"]
-        ChatGPT["🟢 ChatGPT (OpenAI)\nStrategy & Integration"]
-        Gemini["♊ Gemini (Google)\nDeep Context Synthesis"]
-    end
+Traditional AI coding assistants operate in isolated silos, forcing developers to manually copy-paste specifications, code blocks, audits, and test results between different tabs. This studio binds the world's most specialized AI agents into **one continuous document canvas**, where every agent deliberation, architectural contract, code diff, security audit, and sandbox execution is visible to all other agents in real time.
 
-    History <-->|Specs & Invariants| Antigravity
-    History <-->|Security Audits| Claude
-    History <-->|Writes Code to Disk| Cursor
-    History <-->|Runs Process & Tests| Devin
-    History <-->|System Strategies| ChatGPT
-    History <-->|Context Synthesis| Gemini
-    
-    History -->|Live Concurrent Stream| ReactStudio["🖥️ Universal React Cockpit\n(4-Agent Concurrent Split Grid: Antigravity, Claude, Cursor, Devin)"]
+```
+       ┌────────────────────────────────────────────────────────┐
+       │               Single Shared History                    │
+       │       (MongoDB & Physical Disk Event Stream)           │
+       └───────────────────────────┬────────────────────────────┘
+                                   │
+         ┌─────────────────────────┼─────────────────────────┐
+         ▼                         ▼                         ▼
+  🚀 Antigravity             🧠 Claude                 ⚡ Cursor
+(DeepMind Architecture)     (Anthropic Security)      (Composer Synthesizer)
+         │                         │                         │
+         └─────────────────────────┼─────────────────────────┘
+                                   │
+         ┌─────────────────────────┼─────────────────────────┐
+         ▼                         ▼                         ▼
+   🤖 Devin                  🟢 ChatGPT                ♊ Gemini
+(Cognition Sandbox SWE)     (OpenAI Strategy)       (Google Context Engine)
 ```
 
 ---
 
-## 🛠️ The MERN Architecture
+## 👥 The Agent Council
 
-| Component | Role in the System |
-| :--- | :--- |
-| **MongoDB (M)** | Stores the immutable chronological event stream (`HistoryEntry`), sessions (`Session`), and workspace codebase files (`WorkspaceFile`). Includes automatic **Resilient In-Memory fallback** if MongoDB is offline. |
-| **Express.js (E)** | REST API on port `5000` providing endpoints for session lifecycle, agent summoning (`/api/sessions/:id/summon-agent`), settings management (`/api/settings`), and physical disk file I/O. |
-| **React (R)** | Modern interactive studio UI featuring live agent cards, the single shared history stream with expandable thoughts, tool execution logs, and an integrated code editor with file tabs and disk sync. |
-| **Node.js (N)** | Runtime orchestrating turn-taking, executing real tools (`child_process.exec` & `fs`), dispatching live HTTPS calls to Anthropic/OpenAI/Gemini/Ollama, or graceful deterministic fallbacks. |
-
----
-
-## 🚀 Quickstart Guide
-
-### Method 1: Desktop Shortcut (Zero-Install Windows)
-Double-click the desktop shortcut:
-```bat
-Run_Multi_Agents.bat
-```
-This automatically verifies dependencies, starts the Express server on port `5000`, and opens `http://localhost:5000` in your default browser.
+| Agent | Creator | Default Model | Primary Specialization |
+| :--- | :--- | :--- | :--- |
+| **🚀 Antigravity** | Google DeepMind | `gemini-2.0-flash` | System architecture, mathematical invariants, boundary contracts, and modular file topology. |
+| **🧠 Claude** | Anthropic | `claude-3-7-sonnet` | Deep security analysis, boundary condition verification, memory leak defense, and zero-waste refactoring. |
+| **⚡ Cursor** | Anysphere | `composer-v2` | Surgical code synthesis, multi-file code authoring, and direct physical disk synchronization. |
+| **🤖 Devin** | Cognition AI | `sandbox-v2` | Autonomous environment QA, automated unit test authoring, and real child-process execution. |
+| **🟢 ChatGPT** | OpenAI | `gpt-4o` | Ecosystem strategy, API ergonomics, framework compatibility, and production scalability. |
+| **♊ Gemini** | Google | `gemini-2.0` | Cross-system context synthesis, large-scale timeline audits, and repo-wide invariants. |
 
 ---
 
-### Method 2: Manual Start
-In the root directory (`multi_coding_agents`):
-```bash
-# 1. Install dependencies
-npm install
+## 💡 Key Architectural Breakthroughs
 
-# 2. Start server
-npm run server
-```
-*Open `http://localhost:5000` in your browser.*
+### 1. Single Shared History (Inter-Agent Awareness)
+Every prompt and turn is committed to an immutable chronological timeline. When Cursor synthesizes code, it has full context of Antigravity's architectural specifications and Claude's defensive security rules. When Devin writes tests, it verifies the exact methods authored by Cursor.
 
----
+### 2. Universal Model Leasing
+You do not need subscriptions to every AI provider. **Supplying any single key** (such as a 100% free Google Gemini key or Groq key) leases all 6+ agents automatically. The system routes every agent through your active key while preserving their authentic system prompts, personas, and specialized missions.
 
-## ⚙️ Real API Keys & Live Models Setup
+### 3. Physical Disk Workspace Sync
+Files created or modified by agents are not merely rendered as text bubbles—they are written directly to `server/workspace/<sessionId>/` on your physical file system. Edits in the **Code Studio** save with `Ctrl+S` directly to disk, and Devin's tests run using real Node.js child processes.
 
-The application features a built-in **⚙️ Real API Keys & Models** modal in the top navigation bar:
-1. Click **⚙️ API Keys & Live Models** in the top-right header.
-2. Enter your real API keys:
-   - **Anthropic API Key**: `sk-ant-api03-...` (Powers 🧠 Claude 3.7 / 3.5 Sonnet)
-   - **OpenAI API Key**: `sk-...` (Powers 🟢 ChatGPT, ⚡ Cursor, 🤖 Devin)
-   - **Google Gemini API Key**: `AIzaSy...` (Powers 🚀 Antigravity & ♊ Gemini 2.0)
-   - **Ollama / Local URL**: `http://localhost:11434/v1` (Powers free offline local models)
-3. Click **💾 Save & Activate Real Agents**.
-4. Keys are automatically saved to your `.env` file and live badges indicate which models are active!
-
-> **Offline Preview**: If you haven't entered API keys yet, the application gracefully operates using a built-in high-fidelity emulation engine, ensuring complete usability and testing without cost or internet connection.
+### 4. Dynamic Autonomous Fallback Engine
+When running offline or without API keys, the built-in **Dynamic Autonomous Engine** parses the user's specific prompt (e.g., games, algorithms, REST APIs, auth systems), generates custom, non-mock, executable code, audits it, and executes real automated tests.
 
 ---
 
-## 💻 Physical Workspace & Tool Execution
+## 🖥️ User Interface: Google Antigravity Design System
 
-Files generated by agents or edited by the user are mirrored directly to physical disk:
-```
-server/workspace/<sessionId>/
-├── coreService.js       # Synthesized by Cursor / User
-└── testSuite.js         # Automated test suite run by Devin
-```
-- **Real Disk Writes**: Agent `write_file` calls write UTF-8 files to the physical filesystem.
-- **Real Terminal Execution**: Devin and testing tools execute real Node/Python processes in the workspace directory via `child_process.exec`.
-- **Editor Sync**: Hit `Ctrl+S` in the code editor to save changes directly to disk and database.
+The frontend interface embodies the **Google Antigravity 2.0** design language:
+- **Obsidian Dark Palette**: `#131314` base background, `#1e1f20` surface cards, `#3c4043` border hierarchy.
+- **DeepMind & Google Accents**: Violet (`#c084fc`), Google Blue (`#a8c7fa`), Anthropic Gold (`#fbc02d`), and Terminal Green (`#6dd58c`).
+- **48px Activity Bar**: Quick access to chats, Code Studio, Sandbox Terminal, shortcuts, and settings.
+- **Three Core Working Surfaces**:
+  1. **💬 Chat Canvas**: Primary chronological stream featuring agent turns with collapsible `<details>` thinking process accordions.
+  2. **💻 Code Studio**: Full-screen code editor with multi-file tabs, physical disk sync, line numbers, and keyboard shortcuts (`Ctrl+S`).
+  3. **🖥️ Sandbox Terminal**: Cognition Devin terminal runner capturing real child process stdout, stderr, and exit codes.
+- **Floating Prompt Card**: Bottom input card featuring `@ Agent` summon chips, quick command helpers (`/plan`, `/goal`, `/schedule`, `/browser`), and circular send button (`↑`).
 
 ---
 
-## 📂 Project Structure
+## 🔌 Supported LLM Providers
+
+| Provider | Free Tier Available? | Recommended Model | Configuration |
+| :--- | :--- | :--- | :--- |
+| **Google Gemini** | ✅ Yes (15 RPM free) | `gemini-2.0-flash` | [Google AI Studio](https://aistudio.google.com/app/apikey) |
+| **Groq Cloud** | ✅ Yes (Ultra-fast free tier) | `llama-3.3-70b-versatile` | [Groq Console](https://console.groq.com/keys) |
+| **OpenRouter** | ✅ Yes (Includes 100% free models) | `google/gemini-2.0-flash-exp:free` | [OpenRouter Keys](https://openrouter.ai/keys) |
+| **Anthropic** | Paid API | `claude-3-7-sonnet-20250219` | [Anthropic Console](https://console.anthropic.com/) |
+| **OpenAI** | Paid API | `gpt-4o` / `gpt-4o-mini` | [OpenAI Platform](https://platform.openai.com/api-keys) |
+| **Ollama / Local** | ✅ Yes (100% Free & Local) | `llama3`, `qwen2.5-coder` | `http://localhost:11434` |
+
+---
+
+## 📁 Repository Structure
 
 ```
 multi_coding_agents/
-├── server/                       # Node.js + Express Backend
-│   ├── config/
-│   │   ├── db.js                 # MongoDB connection & in-memory fallback
-│   │   └── agentsCatalog.js      # Metadata for Antigravity, Claude, Cursor, Devin, etc.
-│   ├── models/                   # Mongoose Data Schemas
-│   │   ├── HistoryEntry.js       # Core Single Shared History collection
-│   │   ├── Session.js            # Coding task sessions
-│   │   └── WorkspaceFile.js      # Files generated by agents
-│   ├── agents/                   # Multi-Agent Engine
-│   │   ├── SingleSharedHistory.js# Unified history manager & prompt projector
-│   │   ├── UniversalOrchestrator.js# Multi-agent router & roundtable coordinator
-│   │   └── Orchestrator.js       # Pipeline runner
-│   ├── services/
-│   │   ├── realLLMProvider.js    # Live HTTPS clients for Anthropic, OpenAI, Gemini, Ollama
-│   │   ├── realToolRunner.js     # Real disk file I/O & child process execution
-│   │   ├── settingsManager.js    # Dynamic API key management & .env persistence
-│   │   ├── dbService.js          # Dual MongoDB/Memory abstraction layer
-│   │   └── llmService.js         # Unified LLM dispatcher with fallback
-│   ├── routes/
-│   │   └── api.js                # REST API endpoints (/api/settings, /api/sessions, etc.)
-│   ├── public/
-│   │   └── index.html            # Standalone zero-install React Web Studio
-│   └── server.js                 # Express entrypoint (Port 5000)
-│
-├── client/                       # Vite React Frontend
+├── client/                      # React Frontend (Vite)
+│   ├── dist/                    # Production static build
+│   │   └── index.html           # Standalone production UI
 │   ├── src/
-│   │   ├── App.jsx               # Studio UI with agent roster, history, and settings
-│   │   ├── components/
-│   │   │   └── CodeEditor.jsx    # Code editor with line numbers, tabs & review tools
-│   │   ├── index.css             # Developer dark-mode styling
-│   │   └── main.jsx              # React DOM mounting
-│   └── dist/
-│       └── index.html            # Pre-bundled client assets
-│
-├── .env                          # Configuration (port, database, API keys)
-├── run.bat                       # Project launch script
-└── README.md                     # Documentation
+│   │   ├── App.jsx              # Main Antigravity React Application
+│   │   ├── index.css            # Antigravity Design System stylesheet
+│   │   └── main.jsx             # React entrypoint
+│   ├── index.html               # Vite HTML template
+│   └── package.json             # Frontend dependencies
+├── server/                      # Express Backend
+│   ├── agents/                  # Orchestrator & Multi-Agent Core
+│   │   ├── UniversalOrchestrator.js # Universal multi-agent pipeline
+│   │   ├── SingleSharedHistory.js   # Canonical shared event stream
+│   │   └── BaseAgent.js             # Base agent contract
+│   ├── config/
+│   │   ├── agentsCatalog.js     # Agent catalog & metadata
+│   │   └── db.js                # MongoDB connection & in-memory fallback
+│   ├── models/                  # Data Models
+│   │   ├── Session.js           # Session schema
+│   │   ├── HistoryEntry.js      # Chronological turn schema
+│   │   └── WorkspaceFile.js     # Code file schema
+│   ├── public/                  # Static fallback distribution
+│   │   └── index.html           # Standalone single-file app
+│   ├── routes/
+│   │   └── api.js               # REST API endpoints
+│   ├── services/
+│   │   ├── dynamicAgentEngine.js# Autonomous prompt-to-code synthesizer
+│   │   ├── realLLMProvider.js   # Multi-provider HTTPS connector
+│   │   ├── realToolRunner.js    # Child process runner & disk I/O
+│   │   └── settingsManager.js   # API key persistence & diagnostics
+│   ├── workspace/               # Physical disk workspace directory
+│   └── server.js                # Express server entrypoint (Port 5000)
+├── multi_agent/                 # Python reference SDK for agent tools
+├── .env.example                 # Environment template
+├── .gitignore                   # Git ignore rules
+├── package.json                 # Root dependencies & scripts
+├── README.md                    # Project documentation
+└── Run_Multi_Agents.bat         # One-click Windows launch script
 ```
+
+---
+
+## 🚀 Getting Started
+
+### Prerequisites
+- [Node.js](https://nodejs.org/) (v18 or higher recommended)
+- [MongoDB](https://www.mongodb.com/) (Optional — application automatically switches to **In-Memory Resilient Mode** if MongoDB is offline)
+
+### Installation
+
+1. **Clone the repository and checkout the `Multi-agent` branch:**
+   ```bash
+   git clone -b Multi-agent https://github.com/samipatel12345678/Github_Papers.git
+   cd Github_Papers
+   ```
+
+2. **Install dependencies:**
+   ```bash
+   npm install
+   ```
+
+3. **Configure Environment (Optional):**
+   Copy `.env.example` to `.env`:
+   ```bash
+   cp .env.example .env
+   ```
+   *(You can also configure API keys directly inside the application UI via the ⚙️ Settings modal).*
+
+4. **Start the Application:**
+
+   - **Option A: One-Click Windows Launcher:**
+     Double-click `Run_Multi_Agents.bat`.
+
+   - **Option B: Command Line:**
+     ```bash
+     npm run server
+     ```
+
+5. **Open in Browser:**
+   Navigate to [http://localhost:5000](http://localhost:5000).
+
+---
+
+## ⌨️ Keyboard Shortcuts
+
+| Shortcut | Action |
+| :--- | :--- |
+| `Ctrl + S` | Save active file in Code Studio to physical disk |
+| `Enter` | Send message or execute council broadcast |
+| `Ctrl + I` | Focus bottom prompt input card |
+
+---
+
+## 📡 REST API Reference
+
+| Method | Endpoint | Description |
+| :--- | :--- | :--- |
+| `GET` | `/api/health` | Health check, DB status, and active key diagnostics |
+| `GET` | `/api/settings` | Retrieve active LLM provider configurations |
+| `POST` | `/api/settings` | Update and persist API keys to `.env` |
+| `POST` | `/api/settings/test` | Test live API connectivity and measure latency |
+| `GET` | `/api/sessions` | List all conversation sessions |
+| `POST` | `/api/sessions` | Create a new session with an initial prompt |
+| `GET` | `/api/sessions/:id/history` | Retrieve the canonical chronological history |
+| `POST` | `/api/sessions/:id/summon-agent` | Summon a specific agent to take a turn |
+| `POST` | `/api/sessions/:id/run-all` | Execute full Roundtable Council across all agents |
+| `GET` | `/api/sessions/:id/files` | List physical disk workspace files |
+| `POST` | `/api/sessions/:id/files` | Create or update a workspace file |
+
+---
+
+## 📄 License
+
+This project is licensed under the **MIT License** — see the [LICENSE](LICENSE) file for details.
