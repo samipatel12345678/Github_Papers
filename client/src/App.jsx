@@ -56,8 +56,27 @@ export default function App() {
 
   const [terminalInput, setTerminalInput] = useState('');
   const [terminalLogs, setTerminalLogs] = useState([
-    'devin@cognition-sandbox:~/workspace$ echo "Antigravity Real Agent Sandbox online. Live disk sync active."'
+    {
+      id: 'init-1',
+      type: 'init',
+      output: 'Google Antigravity Devin Autonomous Host Sandbox online.\nReal workspace disk sync active in server/workspace/',
+      timestamp: new Date().toLocaleTimeString(),
+      success: true
+    }
   ]);
+
+  const [cursorPos, setCursorPos] = useState({ line: 1, col: 1 });
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [explorerCollapsed, setExplorerCollapsed] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+
+  // Real terminal execution state
+  const [terminalHistory, setTerminalHistory] = useState([]);
+  const [historyIndex, setHistoryIndex] = useState(null);
+  const [isExecutingCmd, setIsExecutingCmd] = useState(false);
+  const [notifyCouncilOnCmd, setNotifyCouncilOnCmd] = useState(true);
+  const [lastFailedCmd, setLastFailedCmd] = useState(null);
 
   const [modalOpen, setModalOpen] = useState(false);
   const [settingsModalOpen, setSettingsModalOpen] = useState(false);
@@ -79,6 +98,7 @@ export default function App() {
   const [testResult, setTestResult] = useState(null);
 
   const textareaRef = useRef(null);
+  const linenumsRef = useRef(null);
   const terminalBottomRef = useRef(null);
   const chatBottomRef = useRef(null);
 
@@ -302,8 +322,68 @@ export default function App() {
     }
   };
 
+  const getLanguageTag = (filename = '') => {
+    if (filename.endsWith('.js') || filename.endsWith('.jsx')) return 'JavaScript (ES6+)';
+    if (filename.endsWith('.ts') || filename.endsWith('.tsx')) return 'TypeScript';
+    if (filename.endsWith('.json')) return 'JSON';
+    if (filename.endsWith('.py')) return 'Python';
+    if (filename.endsWith('.html')) return 'HTML5';
+    if (filename.endsWith('.css')) return 'CSS3';
+    if (filename.endsWith('.md')) return 'Markdown';
+    if (filename.endsWith('.sh') || filename.endsWith('.bat')) return 'Shell Script';
+    return 'Plain Text';
+  };
+
+  const getFileIcon = (filename = '') => {
+    if (filename.endsWith('.js') || filename.endsWith('.jsx')) return '🟨';
+    if (filename.endsWith('.json')) return '📦';
+    if (filename.endsWith('.py')) return '🐍';
+    if (filename.endsWith('.md')) return '📝';
+    if (filename.endsWith('.html') || filename.endsWith('.css')) return '🌐';
+    if (filename.includes('test')) return '🧪';
+    return '📄';
+  };
+
+  const updateCursorPos = (e) => {
+    const text = e.target.value;
+    const selStart = e.target.selectionStart;
+    const lines = text.substring(0, selStart).split('\n');
+    const line = lines.length;
+    const col = lines[lines.length - 1].length + 1;
+    setCursorPos({ line, col });
+  };
+
+  const handleEditorScroll = (e) => {
+    if (linenumsRef.current) {
+      linenumsRef.current.scrollTop = e.target.scrollTop;
+    }
+  };
+
+  const handleEditorKeyDown = (e) => {
+    if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+      e.preventDefault();
+      handleSaveCode();
+    } else if ((e.ctrlKey || e.metaKey) && e.key === 'f') {
+      e.preventDefault();
+      setIsSearchOpen(prev => !prev);
+    } else if (e.key === 'Tab') {
+      e.preventDefault();
+      const start = e.target.selectionStart;
+      const end = e.target.selectionEnd;
+      const newContent = editorContent.substring(0, start) + '  ' + editorContent.substring(end);
+      setEditorContent(newContent);
+      setIsDirty(true);
+      setTimeout(() => {
+        if (textareaRef.current) {
+          textareaRef.current.selectionStart = textareaRef.current.selectionEnd = start + 2;
+        }
+      }, 0);
+    }
+  };
+
   const handleSaveCode = async () => {
     if (!activeFile || !activeSessionId) return;
+    setIsSaving(true);
     try {
       await fetch(`/api/sessions/${activeSessionId}/files`, {
         method: 'POST',
@@ -312,9 +392,21 @@ export default function App() {
       });
       setIsDirty(false);
       await loadFiles(activeSessionId);
-      setTerminalLogs(prev => [...prev, `[Antigravity Real Disk I/O] Saved '${activeFile}' (${editorContent.length} bytes) to server/workspace/${activeSessionId}/`]);
+      setTerminalLogs(prev => [
+        ...prev,
+        {
+          id: Date.now(),
+          type: 'output',
+          output: `[Real Disk I/O] Saved '${activeFile}' (${editorContent.length} bytes) to server/workspace/${activeSessionId}/`,
+          exitCode: 0,
+          success: true,
+          timestamp: new Date().toLocaleTimeString()
+        }
+      ]);
     } catch (err) {
       alert('Save failed: ' + err.message);
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -333,17 +425,160 @@ export default function App() {
     setActiveFile(fn);
   };
 
+  const handleDeleteFile = async (fn, e) => {
+    if (e) e.stopPropagation();
+    if (!window.confirm(`Delete '${fn}' from workspace and physical disk?`)) return;
+    try {
+      await fetch(`/api/sessions/${activeSessionId}/files/${fn}`, { method: 'DELETE' });
+      await loadFiles(activeSessionId);
+      if (activeFile === fn) {
+        const remaining = files.filter(f => f.filename !== fn);
+        setActiveFile(remaining.length > 0 ? remaining[0].filename : null);
+      }
+    } catch (err) {
+      alert('Delete failed: ' + err.message);
+    }
+  };
+
+  const handleRunActiveFile = async () => {
+    if (!activeFile || !activeSessionId) return;
+    if (isDirty) {
+      await handleSaveCode();
+    }
+    setViewMode('full_terminal');
+    await executeTerminalCommand(`node ${activeFile}`);
+  };
+
+  const executeTerminalCommand = async (cmdToRun) => {
+    if (!cmdToRun || !activeSessionId || isExecutingCmd) return;
+    const cmd = cmdToRun.trim();
+    setIsExecutingCmd(true);
+    setTerminalHistory(prev => [cmd, ...prev.filter(c => c !== cmd)]);
+    setHistoryIndex(null);
+
+    setTerminalLogs(prev => [
+      ...prev,
+      {
+        id: Date.now(),
+        type: 'command',
+        command: cmd,
+        timestamp: new Date().toLocaleTimeString()
+      }
+    ]);
+
+    try {
+      const res = await fetch(`/api/sessions/${activeSessionId}/terminal`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          command: cmd,
+          notifyAgents: notifyCouncilOnCmd
+        })
+      });
+      const data = await res.json();
+      setTerminalLogs(prev => [
+        ...prev,
+        {
+          id: Date.now() + 1,
+          type: 'output',
+          output: data.output,
+          exitCode: data.exitCode,
+          success: data.success,
+          timestamp: data.timestamp
+        }
+      ]);
+
+      if (!data.success && data.exitCode !== 0) {
+        setLastFailedCmd({ command: cmd, output: data.output });
+      } else {
+        setLastFailedCmd(null);
+      }
+
+      await loadFiles(activeSessionId);
+    } catch (err) {
+      setTerminalLogs(prev => [
+        ...prev,
+        {
+          id: Date.now() + 1,
+          type: 'output',
+          output: `Terminal execution error: ${err.message}`,
+          exitCode: 1,
+          success: false,
+          timestamp: new Date().toLocaleTimeString()
+        }
+      ]);
+    } finally {
+      setIsExecutingCmd(false);
+    }
+  };
+
   const handleRunTerminalCommand = (e) => {
     e.preventDefault();
     if (!terminalInput.trim()) return;
-    const cmd = terminalInput.trim();
+    const cmd = terminalInput;
     setTerminalInput('');
-    setTerminalLogs(prev => [
-      ...prev,
-      `devin@cognition-sandbox:~/workspace$ ${cmd}`,
-      `[Antigravity Host Sandbox Execution in server/workspace/${activeSessionId}/...]`,
-      `✔ Process exited cleanly with code 0.`
+    executeTerminalCommand(cmd);
+  };
+
+  const handleTerminalKeyDown = (e) => {
+    if (e.key === 'ArrowUp') {
+      if (terminalHistory.length === 0) return;
+      e.preventDefault();
+      const nextIndex = historyIndex === null ? 0 : Math.min(historyIndex + 1, terminalHistory.length - 1);
+      setHistoryIndex(nextIndex);
+      setTerminalInput(terminalHistory[nextIndex]);
+    } else if (e.key === 'ArrowDown') {
+      if (terminalHistory.length === 0 || historyIndex === null) return;
+      e.preventDefault();
+      const prevIndex = historyIndex - 1;
+      if (prevIndex < 0) {
+        setHistoryIndex(null);
+        setTerminalInput('');
+      } else {
+        setHistoryIndex(prevIndex);
+        setTerminalInput(terminalHistory[prevIndex]);
+      }
+    }
+  };
+
+  const handleAskDevinToFix = async () => {
+    if (!lastFailedCmd) return;
+    setViewMode('unified_stream');
+    await handleAskAgent('devin', `The test execution failed for command \`${lastFailedCmd.command}\`:\n\`\`\`\n${lastFailedCmd.output}\n\`\`\`\nPlease debug the workspace code, fix the failures, and verify the tests pass.`);
+  };
+
+  const handleClearTerminal = () => {
+    setTerminalLogs([
+      {
+        id: Date.now(),
+        type: 'init',
+        output: 'Terminal output cleared. Devin Autonomous Host Sandbox ready.',
+        timestamp: new Date().toLocaleTimeString(),
+        success: true
+      }
     ]);
+    setLastFailedCmd(null);
+  };
+
+  const handleCopyTerminalLogs = () => {
+    const text = terminalLogs.map(l => {
+      if (l.type === 'command') return `$ ${l.command}`;
+      return l.output || '';
+    }).join('\n');
+    navigator.clipboard.writeText(text);
+    alert('Terminal logs copied to clipboard!');
+  };
+
+  const handleDownloadTerminalLogs = () => {
+    const text = terminalLogs.map(l => {
+      if (l.type === 'command') return `[${l.timestamp}] $ ${l.command}`;
+      return l.output || '';
+    }).join('\n\n');
+    const dataStr = "data:text/plain;charset=utf-8," + encodeURIComponent(text);
+    const dlAnchor = document.createElement('a');
+    dlAnchor.setAttribute("href", dataStr);
+    dlAnchor.setAttribute("download", `antigravity-terminal-${activeSessionId || 'logs'}.txt`);
+    dlAnchor.click();
   };
 
   const handleExportHistory = () => {
@@ -686,103 +921,373 @@ export default function App() {
             </div>
           )}
 
-          {/* VIEW 2: FULLSCREEN CODE STUDIO */}
+          {/* VIEW 2: FULLSCREEN CODE STUDIO & INTEGRATED IDE */}
           {viewMode === 'full_editor' && (
             <div className="ag-fullscreen-editor">
+              {/* Top Navigation & Tabs */}
               <div className="ag-editor-top-bar">
-                <div className="ag-editor-tabs">
-                  {files.map(f => (
-                    <div
-                      key={f.filename}
-                      className={`ag-tab-pill ${f.filename === activeFile ? 'active' : ''}`}
-                      onClick={() => setActiveFile(f.filename)}
-                    >
-                      <span>📄</span>
-                      <span>{f.filename}</span>
-                      {f.filename === activeFile && isDirty && <span style={{ color: '#fbc02d' }}>●</span>}
-                    </div>
-                  ))}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 }}>
                   <button
-                    style={{ background: 'none', color: '#78d9ec', fontSize: '11px', padding: '2px 8px', border: '1px dashed rgba(120,217,236,0.3)', borderRadius: '4px' }}
-                    onClick={() => setNewFilePrompt(true)}
+                    className="ag-explorer-tool-btn"
+                    title={explorerCollapsed ? "Expand File Explorer" : "Collapse File Explorer"}
+                    onClick={() => setExplorerCollapsed(prev => !prev)}
+                    style={{ fontSize: '13px', padding: '4px 6px' }}
                   >
-                    + New File
+                    📂
                   </button>
+
+                  <div className="ag-editor-tabs">
+                    {files.map(f => (
+                      <div
+                        key={f.filename}
+                        className={`ag-tab-pill ${f.filename === activeFile ? 'active' : ''}`}
+                        onClick={() => setActiveFile(f.filename)}
+                      >
+                        <span>{getFileIcon(f.filename)}</span>
+                        <span>{f.filename}</span>
+                        {f.filename === activeFile && isDirty && <span style={{ color: '#fbc02d', marginLeft: '2px' }}>●</span>}
+                      </div>
+                    ))}
+                    <button
+                      style={{ background: 'none', color: '#78d9ec', fontSize: '11px', padding: '3px 8px', border: '1px dashed rgba(120,217,236,0.3)', borderRadius: '4px', cursor: 'pointer' }}
+                      onClick={() => setNewFilePrompt(true)}
+                    >
+                      + New
+                    </button>
+                  </div>
                 </div>
 
-                <div style={{ display: 'flex', gap: '8px' }}>
-                  <button style={{ background: '#0284c7', color: 'white', padding: '4px 12px', fontSize: '11.5px', borderRadius: '6px' }} onClick={handleSaveCode}>
-                    💾 Save to Disk (Ctrl+S)
+                <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                  <button
+                    style={{ background: '#0284c7', color: 'white', padding: '4px 12px', fontSize: '11.5px', borderRadius: '6px', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '5px' }}
+                    onClick={handleSaveCode}
+                    disabled={isSaving}
+                    title="Save to Physical Disk (Ctrl+S)"
+                  >
+                    <span>💾</span>
+                    <span>{isSaving ? 'Saving...' : 'Save (Ctrl+S)'}</span>
                   </button>
-                  <button style={{ background: '#282a2c', color: 'var(--ag-text-primary)', padding: '4px 12px', fontSize: '11.5px', borderRadius: '6px' }} onClick={() => setViewMode('unified_stream')}>
-                    💬 Back to Chat
+                  <button
+                    style={{ background: '#059669', color: 'white', padding: '4px 12px', fontSize: '11.5px', borderRadius: '6px', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '5px' }}
+                    onClick={handleRunActiveFile}
+                    title="Execute Active File in Host Terminal"
+                  >
+                    <span>▶</span>
+                    <span>Run File</span>
+                  </button>
+                  <button
+                    style={{ background: 'rgba(255,255,255,0.06)', color: 'var(--ag-text-secondary)', padding: '4px 10px', fontSize: '11.5px', borderRadius: '6px', border: '1px solid var(--ag-border-subtle)', cursor: 'pointer' }}
+                    onClick={() => setIsSearchOpen(prev => !prev)}
+                    title="Toggle Find / Search (Ctrl+F)"
+                  >
+                    🔍 Find
+                  </button>
+                  <button
+                    style={{ background: 'rgba(251,192,45,0.15)', color: '#fbc02d', padding: '4px 10px', fontSize: '11.5px', borderRadius: '6px', border: '1px solid rgba(251,192,45,0.3)', cursor: 'pointer' }}
+                    onClick={() => handleAskAgent('claude', `Please perform a deep security audit and boundary condition check on file \`${activeFile}\`:\n\`\`\`\n${editorContent}\n\`\`\``)}
+                    title="Trigger Claude Defensive Security Audit"
+                  >
+                    🛡️ Audit
+                  </button>
+                  <button
+                    style={{ background: '#282a2c', color: 'var(--ag-text-primary)', padding: '4px 12px', fontSize: '11.5px', borderRadius: '6px', border: '1px solid var(--ag-border)', cursor: 'pointer' }}
+                    onClick={() => setViewMode('unified_stream')}
+                  >
+                    💬 Chat
                   </button>
                 </div>
               </div>
 
+              {/* Inline Search / Replace Bar */}
+              {isSearchOpen && (
+                <div className="ag-editor-search-bar">
+                  <span>🔍</span>
+                  <input
+                    type="text"
+                    className="ag-search-input"
+                    placeholder="Find in file..."
+                    autoFocus
+                    value={searchQuery}
+                    onChange={e => setSearchQuery(e.target.value)}
+                  />
+                  {searchQuery && (
+                    <span className="ag-search-badge">
+                      {editorContent.split(searchQuery).length - 1} matches
+                    </span>
+                  )}
+                  <button
+                    style={{ background: 'none', border: 'none', color: 'var(--ag-text-muted)', cursor: 'pointer', marginLeft: 'auto', fontSize: '13px' }}
+                    onClick={() => { setIsSearchOpen(false); setSearchQuery(''); }}
+                  >
+                    ✕
+                  </button>
+                </div>
+              )}
+
+              {/* New File Inline Prompt */}
               {newFilePrompt && (
                 <form onSubmit={handleCreateNewFile} style={{ display: 'flex', gap: '6px', padding: '8px 16px', background: '#18191b', borderBottom: '1px solid var(--ag-border-subtle)' }}>
                   <input
                     type="text"
-                    placeholder="filename.js"
+                    placeholder="e.g. rateLimiter.js, testSuite.js, schema.json"
                     autoFocus
                     value={newFileName}
                     onChange={e => setNewFileName(e.target.value)}
                     style={{ background: '#111', border: '1px solid #3c4043', color: 'white', padding: '4px 10px', borderRadius: '6px', fontSize: '12px', flex: 1, fontFamily: 'var(--font-mono)' }}
                   />
-                  <button type="submit" style={{ background: '#0284c7', color: 'white', padding: '4px 12px', fontSize: '11.5px', borderRadius: '6px' }}>Create</button>
-                  <button type="button" style={{ background: '#333', color: 'white', padding: '4px 10px', fontSize: '11.5px', borderRadius: '6px' }} onClick={() => setNewFilePrompt(false)}>Cancel</button>
+                  <button type="submit" style={{ background: '#0284c7', color: 'white', padding: '4px 12px', fontSize: '11.5px', borderRadius: '6px', border: 'none', cursor: 'pointer' }}>Create</button>
+                  <button type="button" style={{ background: '#333', color: 'white', padding: '4px 10px', fontSize: '11.5px', borderRadius: '6px', border: 'none', cursor: 'pointer' }} onClick={() => setNewFilePrompt(false)}>Cancel</button>
                 </form>
               )}
 
-              <textarea
-                ref={textareaRef}
-                className="ag-editor-textarea"
-                value={editorContent}
-                onChange={e => { setEditorContent(e.target.value); setIsDirty(true); }}
-                onKeyDown={e => {
-                  if ((e.ctrlKey || e.metaKey) && e.key === 's') { e.preventDefault(); handleSaveCode(); }
-                }}
-                placeholder="// Write or edit code here... auto-synced with server/workspace/"
-                spellCheck="false"
-              />
+              {/* 2-Column IDE Body */}
+              <div className="ag-studio-layout">
+                {/* Left File Explorer */}
+                {!explorerCollapsed && (
+                  <div className="ag-studio-explorer">
+                    <div className="ag-explorer-header">
+                      <span>Workspace Files</span>
+                      <div className="ag-explorer-actions">
+                        <button className="ag-explorer-tool-btn" title="Create New File" onClick={() => setNewFilePrompt(true)}>+</button>
+                        <button className="ag-explorer-tool-btn" title="Resync from Disk" onClick={() => loadFiles(activeSessionId)}>🔄</button>
+                        <button className="ag-explorer-tool-btn" title="Export Bundle" onClick={handleExportCodeBundle}>📦</button>
+                      </div>
+                    </div>
+                    <div className="ag-explorer-file-list">
+                      {files.length === 0 ? (
+                        <div style={{ padding: '12px', color: 'var(--ag-text-muted)', fontSize: '11px', textAlign: 'center' }}>
+                          No files created yet. Ask Cursor to synthesize code or click '+ New'.
+                        </div>
+                      ) : (
+                        files.map(f => (
+                          <div
+                            key={f.filename}
+                            className={`ag-explorer-file-item ${f.filename === activeFile ? 'active' : ''}`}
+                            onClick={() => setActiveFile(f.filename)}
+                          >
+                            <div className="ag-explorer-file-name">
+                              <span>{getFileIcon(f.filename)}</span>
+                              <span>{f.filename}</span>
+                            </div>
+                            <div className="ag-explorer-file-meta">
+                              <span>{Math.round((f.content || '').length / 1024 * 10) / 10} KB</span>
+                              <button
+                                className="ag-explorer-del-btn"
+                                title="Delete File"
+                                onClick={(e) => handleDeleteFile(f.filename, e)}
+                              >
+                                ✕
+                              </button>
+                            </div>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* Right Editor Core Area */}
+                <div className="ag-studio-editor-main">
+                  <div className="ag-editor-workspace">
+                    {/* Synchronized Line Numbers Rail */}
+                    <div ref={linenumsRef} className="ag-editor-linenums">
+                      {Array.from({ length: Math.max((editorContent || '').split('\n').length, 1) }, (_, i) => (
+                        <div key={i}>{i + 1}</div>
+                      ))}
+                    </div>
+
+                    {/* Main Code Textarea */}
+                    <textarea
+                      ref={textareaRef}
+                      className="ag-editor-textarea"
+                      value={editorContent}
+                      onChange={e => {
+                        setEditorContent(e.target.value);
+                        setIsDirty(true);
+                        updateCursorPos(e);
+                      }}
+                      onKeyUp={updateCursorPos}
+                      onClick={updateCursorPos}
+                      onScroll={handleEditorScroll}
+                      onKeyDown={handleEditorKeyDown}
+                      placeholder="// Write or edit code here... Physical disk sync active with server/workspace/"
+                      spellCheck="false"
+                    />
+                  </div>
+
+                  {/* Bottom IDE Status Bar */}
+                  <div className="ag-editor-status-bar">
+                    <div className="ag-status-group">
+                      <div className="ag-status-item">
+                        <span>📍</span>
+                        <span>Ln {cursorPos.line}, Col {cursorPos.col}</span>
+                      </div>
+                      <div className="ag-status-item">
+                        <span>{(editorContent || '').split('\n').length} lines, {editorContent.length} chars</span>
+                      </div>
+                      <div className="ag-status-item" style={{ color: 'var(--ag-cyan)' }}>
+                        <span>🏷️</span>
+                        <span>{getLanguageTag(activeFile || '')}</span>
+                      </div>
+                    </div>
+
+                    <div className="ag-status-group">
+                      <div className="ag-status-item" style={{ color: isDirty ? '#fbc02d' : '#6dd58c' }}>
+                        <span>●</span>
+                        <span>{isDirty ? 'Unsaved changes' : 'Synced with physical disk'}</span>
+                      </div>
+                      <div className="ag-status-item">UTF-8</div>
+                      <div className="ag-status-item">Spaces: 2</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           )}
 
           {/* VIEW 3: FULLSCREEN SANDBOX TERMINAL */}
           {viewMode === 'full_terminal' && (
             <div className="ag-fullscreen-terminal">
+              {/* Terminal Header */}
               <div className="ag-term-header-bar">
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <span>🖥️</span>
-                  <span>devin@cognition-sandbox:~/workspace (Autonomous Host Runner)</span>
+                  <span style={{ fontWeight: 600 }}>devin@cognition-sandbox:~/workspace</span>
+                  <span style={{ color: 'var(--ag-text-muted)', fontSize: '11px' }}>
+                    (Host Process Execution in server/workspace/{activeSessionId}/)
+                  </span>
                 </div>
-                <div style={{ display: 'flex', gap: '8px' }}>
-                  <button style={{ background: '#059669', color: 'white', padding: '4px 12px', fontSize: '11px', borderRadius: '6px' }} onClick={() => handleAskAgent('devin')}>
-                    Run QA Suite
+                <div style={{ display: 'flex', gap: '6px' }}>
+                  <button
+                    className="ag-term-btn"
+                    style={{ background: '#059669', borderColor: '#059669', color: 'white' }}
+                    onClick={() => executeTerminalCommand('node testSuite.js')}
+                    disabled={isExecutingCmd}
+                  >
+                    🧪 Run Tests
                   </button>
-                  <button style={{ background: '#282a2c', color: 'var(--ag-text-primary)', padding: '4px 12px', fontSize: '11.5px', borderRadius: '6px' }} onClick={() => setViewMode('unified_stream')}>
+                  <button
+                    className="ag-term-btn"
+                    onClick={() => handleAskAgent('devin')}
+                    disabled={loadingTurn}
+                  >
+                    🤖 Summon Devin
+                  </button>
+                  <button
+                    style={{ background: '#282a2c', color: 'var(--ag-text-primary)', padding: '3px 10px', fontSize: '11px', borderRadius: '4px', border: '1px solid var(--ag-border)', cursor: 'pointer' }}
+                    onClick={() => setViewMode('unified_stream')}
+                  >
                     💬 Back to Chat
                   </button>
                 </div>
               </div>
 
+              {/* Terminal Quick Presets Toolbar */}
+              <div className="ag-term-actions-bar">
+                <span style={{ fontSize: '11px', color: 'var(--ag-text-muted)', marginRight: '4px' }}>Quick Commands:</span>
+                {activeFile && (
+                  <button className="ag-term-btn" onClick={() => executeTerminalCommand(`node ${activeFile}`)}>
+                    ▶ node {activeFile}
+                  </button>
+                )}
+                <button className="ag-term-btn" onClick={() => executeTerminalCommand('ls -la')}>
+                  📂 ls -la
+                </button>
+                <button className="ag-term-btn" onClick={() => executeTerminalCommand('node -v')}>
+                  ⚡ node -v
+                </button>
+                <button className="ag-term-btn" onClick={handleClearTerminal}>
+                  🧹 Clear Screen
+                </button>
+                <button className="ag-term-btn" onClick={handleCopyTerminalLogs}>
+                  📋 Copy Logs
+                </button>
+                <button className="ag-term-btn" onClick={handleDownloadTerminalLogs}>
+                  💾 Download Log (.txt)
+                </button>
+                <label style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', marginLeft: 'auto', fontSize: '11px', color: 'var(--ag-text-muted)', cursor: 'pointer' }}>
+                  <input
+                    type="checkbox"
+                    checked={notifyCouncilOnCmd}
+                    onChange={e => setNotifyCouncilOnCmd(e.target.checked)}
+                  />
+                  <span>Sync output with Council History</span>
+                </label>
+              </div>
+
+              {/* Terminal Logs Output Stream */}
               <div className="ag-term-output">
-                {terminalLogs.map((log, idx) => (
-                  <div key={idx} style={{ marginBottom: '4px' }}>{log}</div>
+                {terminalLogs.map((entry, idx) => (
+                  <div key={entry.id || idx} className="ag-term-entry">
+                    {entry.type === 'command' ? (
+                      <div className="ag-term-prompt">
+                        <span>
+                          <span style={{ color: 'var(--ag-green)' }}>devin@sandbox:~/workspace$</span>{' '}
+                          <span style={{ color: '#ffffff' }}>{entry.command}</span>
+                        </span>
+                        <span style={{ fontSize: '10px', color: 'var(--ag-text-muted)', fontWeight: 400 }}>{entry.timestamp}</span>
+                      </div>
+                    ) : (
+                      <div>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '2px' }}>
+                          <span className={`ag-term-badge ${entry.success ? 'success' : 'error'}`}>
+                            {entry.success ? `✔ Exit: ${entry.exitCode ?? 0} (Success)` : `✖ Exit: ${entry.exitCode ?? 1} (Failed)`}
+                          </span>
+                          <span style={{ fontSize: '10px', color: 'var(--ag-text-muted)' }}>{entry.timestamp}</span>
+                        </div>
+                        <div className={`ag-term-body ${entry.success ? 'success' : 'error'}`}>
+                          {entry.output}
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 ))}
+
+                {isExecutingCmd && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--ag-cyan)', padding: '6px 0' }}>
+                    <span style={{ animation: 'agSpin 1s linear infinite' }}>⏳</span>
+                    <span>Host process executing in real workspace sandbox...</span>
+                  </div>
+                )}
+
+                {/* Devin Autonomous Fix Banner */}
+                {lastFailedCmd && (
+                  <div className="ag-term-assist-banner">
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#fca5a5', fontSize: '12px' }}>
+                      <span>⚠️</span>
+                      <span>Test execution failed for <strong>{lastFailedCmd.command}</strong>. Would you like Devin to auto-debug?</span>
+                    </div>
+                    <button
+                      style={{ background: '#ef4444', color: 'white', border: 'none', padding: '4px 12px', borderRadius: '4px', fontSize: '11px', cursor: 'pointer', fontWeight: 600 }}
+                      onClick={handleAskDevinToFix}
+                    >
+                      🤖 Ask Devin to Fix Failures
+                    </button>
+                  </div>
+                )}
+
                 <div ref={terminalBottomRef} />
               </div>
 
+              {/* Terminal Interactive Command Input Line */}
               <form onSubmit={handleRunTerminalCommand} className="ag-term-cmd-row">
-                <span style={{ color: 'var(--ag-green)', marginRight: '8px', fontFamily: 'var(--font-mono)' }}>$</span>
+                <span style={{ color: 'var(--ag-green)', marginRight: '8px', fontFamily: 'var(--font-mono)', fontWeight: 600 }}>$</span>
                 <input
                   type="text"
-                  placeholder="Execute shell command in real workspace directory..."
+                  placeholder="Execute real shell command in server/workspace/ (e.g. node testSuite.js, ls, cat file.js)..."
                   value={terminalInput}
                   onChange={e => setTerminalInput(e.target.value)}
-                  style={{ flex: 1, background: 'transparent', border: 'none', outline: 'none', color: 'white', fontFamily: 'var(--font-mono)', fontSize: '12px' }}
+                  onKeyDown={handleTerminalKeyDown}
+                  disabled={isExecutingCmd}
+                  style={{ flex: 1, background: 'transparent', border: 'none', outline: 'none', color: '#a7f3d0', fontFamily: 'var(--font-mono)', fontSize: '12.5px' }}
                 />
+                <button
+                  type="submit"
+                  disabled={isExecutingCmd || !terminalInput.trim()}
+                  style={{ background: '#192028', border: '1px solid rgba(109,213,140,0.3)', color: 'var(--ag-green)', padding: '3px 10px', fontSize: '11px', borderRadius: '4px', cursor: 'pointer', fontFamily: 'var(--font-mono)' }}
+                >
+                  {isExecutingCmd ? 'Running...' : 'Run ↵'}
+                </button>
               </form>
             </div>
           )}

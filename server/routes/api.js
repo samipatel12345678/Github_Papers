@@ -182,6 +182,79 @@ router.post('/sessions/:id/summon-agent', async (req, res) => {
   }
 });
 
+// Real Terminal Execution in Host Workspace
+router.post('/sessions/:id/terminal', async (req, res) => {
+  try {
+    const { command, notifyAgents } = req.body;
+    if (!command) return res.status(400).json({ error: 'command is required' });
+
+    const runner = new RealToolRunner(req.params.id);
+    const result = await runner.runCommand(command);
+
+    if (notifyAgents) {
+      await DBService.appendHistoryEntry(req.params.id, {
+        senderName: 'User',
+        senderRole: 'Human',
+        messageRole: 'user',
+        content: `Terminal Execution in Host Workspace:\n\`\`\`bash\n$ ${command}\n\`\`\`\nOutput (Exit ${result.exitCode}):\n\`\`\`\n${result.output}\n\`\`\``
+      });
+    }
+
+    res.json({
+      command,
+      output: result.output,
+      exitCode: result.exitCode,
+      success: result.success,
+      timestamp: new Date().toLocaleTimeString()
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Run Active File in Terminal (e.g. node filename.js or python filename.py)
+router.post('/sessions/:id/terminal/run-file', async (req, res) => {
+  try {
+    const { filename } = req.body;
+    if (!filename) return res.status(400).json({ error: 'filename is required' });
+
+    let cmd = `node ${filename}`;
+    if (filename.endsWith('.py')) cmd = `python ${filename}`;
+    else if (filename.endsWith('.sh')) cmd = `bash ${filename}`;
+
+    const runner = new RealToolRunner(req.params.id);
+    const result = await runner.runCommand(cmd);
+
+    res.json({
+      command: cmd,
+      output: result.output,
+      exitCode: result.exitCode,
+      success: result.success,
+      timestamp: new Date().toLocaleTimeString()
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Export Workspace Files as JSON Bundle
+router.get('/sessions/:id/export/archive', async (req, res) => {
+  try {
+    const files = await DBService.getWorkspaceFiles(req.params.id);
+    const session = await DBService.getSession(req.params.id);
+    res.setHeader('Content-Disposition', `attachment; filename="antigravity-workspace-${req.params.id}.json"`);
+    res.json({
+      sessionId: req.params.id,
+      sessionTitle: session ? session.title : 'Workspace',
+      exportedAt: new Date().toISOString(),
+      fileCount: files.length,
+      files
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // Step: Execute single next agent turn in the council
 router.post('/sessions/:id/step', async (req, res) => {
   try {
